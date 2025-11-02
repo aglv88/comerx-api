@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class LoginRequest extends FormRequest
@@ -17,7 +18,7 @@ class LoginRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {
@@ -35,22 +36,9 @@ class LoginRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'username.required' => 'O campo username é obrigatório.',
-            'password.required' => 'O campo password é obrigatório.',
-            'password.min' => 'O campo password deve ter no mínimo :min caracteres.',
-        ];
-    }
-
-    /**
-     * Get custom attributes for validator errors.
-     *
-     * @return array<string, string>
-     */
-    public function attributes(): array
-    {
-        return [
-            'username' => 'nome de usuário',
-            'password' => 'senha',
+            'username.required' => 'The username field is required.',
+            'password.required' => 'The password field is required.',
+            'password.min' => 'The password must be at least :min characters.',
         ];
     }
 }

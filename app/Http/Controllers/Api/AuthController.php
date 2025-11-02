@@ -5,18 +5,21 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Resources\UserResource;
+use App\Http\Traits\ApiResponse;
+use Illuminate\Http\JsonResponse;
 
 /**
  * @tags Autenticação
  */
 class AuthController extends Controller
 {
+    use ApiResponse;
+
     /**
      * Login do usuário
      *
      * Autentica um usuário com username e password, retornando um token JWT.
      *
-     * @return \Illuminate\Http\JsonResponse
      *
      * @response 200 {
      *   "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
@@ -31,15 +34,19 @@ class AuthController extends Controller
      *   "password": ["O campo password é obrigatório."]
      * }
      */
-    public function login(LoginRequest $request)
+    public function login(LoginRequest $request): JsonResponse
     {
         $credentials = $request->only('username', 'password');
 
         if (! $token = auth('api')->attempt($credentials)) {
-            return response()->json(['error' => 'Credenciais inválidas'], 401);
+            return $this->unauthorized('Invalid credentials');
         }
 
-        return $this->respondWithToken($token);
+        return $this->success([
+            'access_token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => auth('api')->factory()->getTTL() * 60,
+        ]);
     }
 
     /**
@@ -47,7 +54,6 @@ class AuthController extends Controller
      *
      * Retorna os dados do usuário atualmente autenticado via token JWT.
      *
-     * @return \Illuminate\Http\JsonResponse
      *
      * @authenticated
      *
@@ -62,9 +68,9 @@ class AuthController extends Controller
      *   "message": "Unauthenticated."
      * }
      */
-    public function me()
+    public function me(): JsonResponse
     {
-        return new UserResource(auth('api')->user());
+        return $this->success(new UserResource(auth('api')->user()));
     }
 
     /**
@@ -72,7 +78,6 @@ class AuthController extends Controller
      *
      * Invalida o token JWT do usuário autenticado.
      *
-     * @return \Illuminate\Http\JsonResponse
      *
      * @authenticated
      *
@@ -83,11 +88,11 @@ class AuthController extends Controller
      *   "message": "Unauthenticated."
      * }
      */
-    public function logout()
+    public function logout(): JsonResponse
     {
         auth('api')->logout();
 
-        return response()->json(['message' => 'Logout realizado com sucesso']);
+        return $this->successWithMessage('Successfully logged out');
     }
 
     /**
@@ -95,7 +100,6 @@ class AuthController extends Controller
      *
      * Gera um novo token JWT invalidando o anterior.
      *
-     * @return \Illuminate\Http\JsonResponse
      *
      * @authenticated
      *
@@ -108,20 +112,11 @@ class AuthController extends Controller
      *   "message": "Unauthenticated."
      * }
      */
-    public function refresh()
+    public function refresh(): JsonResponse
     {
-        return $this->respondWithToken(auth('api')->refresh());
-    }
+        $token = auth('api')->refresh();
 
-    /**
-     * Get the token array structure.
-     *
-     * @param  string  $token
-     * @return \Illuminate\Http\JsonResponse
-     */
-    protected function respondWithToken($token)
-    {
-        return response()->json([
+        return $this->success([
             'access_token' => $token,
             'token_type' => 'bearer',
             'expires_in' => auth('api')->factory()->getTTL() * 60,

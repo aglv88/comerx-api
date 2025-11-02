@@ -20,12 +20,16 @@ test('user can login with valid credentials', function () {
 
     $response->assertStatus(200)
         ->assertJsonStructure([
-            'access_token',
-            'token_type',
-            'expires_in',
+            'success',
+            'data' => [
+                'access_token',
+                'token_type',
+                'expires_in',
+            ],
         ]);
 
-    expect($response->json('token_type'))->toBe('bearer');
+    expect($response->json('success'))->toBeTrue();
+    expect($response->json('data.token_type'))->toBe('bearer');
 });
 
 test('user cannot login with invalid username', function () {
@@ -35,7 +39,10 @@ test('user cannot login with invalid username', function () {
     ]);
 
     $response->assertStatus(401)
-        ->assertJson(['error' => 'Credenciais inválidas']);
+        ->assertJson([
+            'success' => false,
+            'message' => 'Invalid credentials',
+        ]);
 });
 
 test('user cannot login with invalid password', function () {
@@ -45,7 +52,10 @@ test('user cannot login with invalid password', function () {
     ]);
 
     $response->assertStatus(401)
-        ->assertJson(['error' => 'Credenciais inválidas']);
+        ->assertJson([
+            'success' => false,
+            'message' => 'Invalid credentials',
+        ]);
 });
 
 test('login requires username', function () {
@@ -83,7 +93,10 @@ test('authenticated user can logout', function () {
         ->postJson('/api/auth/logout');
 
     $response->assertStatus(200)
-        ->assertJson(['message' => 'Logout realizado com sucesso']);
+        ->assertJson([
+            'success' => true,
+            'message' => 'Successfully logged out',
+        ]);
 });
 
 test('unauthenticated user cannot logout', function () {
@@ -100,6 +113,7 @@ test('authenticated user can get their profile', function () {
 
     $response->assertSuccessful()
         ->assertJson([
+            'success' => true,
             'data' => [
                 'id' => $this->user->id,
                 'username' => 'testuser',
@@ -121,13 +135,17 @@ test('authenticated user can refresh token', function () {
 
     $response->assertStatus(200)
         ->assertJsonStructure([
-            'access_token',
-            'token_type',
-            'expires_in',
+            'success',
+            'data' => [
+                'access_token',
+                'token_type',
+                'expires_in',
+            ],
         ]);
 
-    expect($response->json('token_type'))->toBe('bearer');
-    expect($response->json('access_token'))->not->toBe($token);
+    expect($response->json('success'))->toBeTrue();
+    expect($response->json('data.token_type'))->toBe('bearer');
+    expect($response->json('data.access_token'))->not->toBe($token);
 });
 
 test('unauthenticated user cannot refresh token', function () {
